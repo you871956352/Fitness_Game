@@ -1,0 +1,22 @@
+<resources>
+    <string name="app_name">Fitness_Game</string>
+    <string name="data_1">data</string>
+    <string name="data_2">plan</string>
+    <string name="data_3">game</string>
+    <string name="data_4">health</string>
+    <string name="health_advice">Health Advices</string>
+    <string name="game_UI">Game</string>
+    <string name="my_plan">My Fitness Plan</string>
+    <string name="my_data">My Exercise Data</string>
+    <string name="plan_1">Plan 1</string>
+    <string name="detail_1">Detail 1</string>
+    <string name="detail_2">Detail 2</string>
+    <string name="detail_3">Detail 3</string>
+    <string name="detail_4">Detail 4</string>
+    <string name="plan_2">Plan 2</string>
+    <string name="data_cal">Total calories:</string>
+    <string name="data_step">Total steps:</string>
+    <string name="button_data">Get Rewards</string>
+    <string name="target_step">Target</string>
+    <string name="Progress">Plan Progress</string>
+</resources>
