@@ -6,6 +6,13 @@
     android:layout_height="match_parent"
     tools:context="com.example.kavin.fitness_game.MainActivity">
 
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:background="@drawable/background" />
+
     <LinearLayout
         android:id="@+id/linearLayout"
         android:layout_width="match_parent"
@@ -61,12 +68,5 @@
 
         </LinearLayout>
     </LinearLayout>
-
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:background="@drawable/background" />
 
 </android.support.constraint.ConstraintLayout>

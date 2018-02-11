@@ -58,15 +58,20 @@ public class DisplayData extends AppCompatActivity {
         String[] plan_String = ReadUserData("plan.txt").split(",");
 
         plan = new Plan_item();
-        plan.setTitle(plan_String[0]);
-        plan.setStep(Integer.parseInt(plan_String[1]));
+        if(plan_String.length >1){
+            plan.setTitle(plan_String[0]);
+            plan.setStep(Integer.parseInt(plan_String[1]));
+        }
+
 
         String userStateData = ReadUserData("state.txt");
         if (!userStateData.equals("")){
             String[] temp = userStateData.split(",");
-            userState.setUserName(temp[0]);
-            userState.setStep(Integer.parseInt(temp[1]));
-            userState.setCalo(Float.parseFloat(temp[2]));
+            if(temp.length >1){
+                userState.setUserName(temp[0]);
+                userState.setStep(Integer.parseInt(temp[1]));
+                userState.setCalo(Float.parseFloat(temp[2]));
+            }
             updateUI();
         }
 
