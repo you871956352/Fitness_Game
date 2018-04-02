@@ -10,9 +10,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
+import com.android.volley.Request;
+import com.android.volley.toolbox.StringRequest;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
@@ -33,11 +37,23 @@ import java.io.FileOutputStream;
 import java.text.DateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.text.DateFormat.getDateInstance;
 import static java.text.DateFormat.getTimeInstance;
+
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.VolleyLog;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class DisplayData extends AppCompatActivity {
 
@@ -48,11 +64,13 @@ public class DisplayData extends AppCompatActivity {
     private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
     private static Plan_item plan;
 
-
     @Override
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_display_data);
+
+
 
         userState = new UserState();
         String[] plan_String = ReadUserData("plan.txt").split(",");
@@ -90,6 +108,7 @@ public class DisplayData extends AppCompatActivity {
             accessGoogleFit();
         }
     }
+
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -156,33 +175,32 @@ public class DisplayData extends AppCompatActivity {
 
     //Request function.
     public void sendRequest(DataReadRequest readRequest, final int tid){
-        Log.d(LOG_TAG,"Start");
+        Log.d(LOG_TAG,"Sending to google fit: Start");
         Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
                 .readData(readRequest)
                 .addOnSuccessListener(new OnSuccessListener<DataReadResponse>() {
                     @Override
                     public void onSuccess(DataReadResponse dataReadResponse) {
                         updateData(dataReadResponse);
-                        Log.d(LOG_TAG, "onSuccess()");
+                        Log.d(LOG_TAG, "Sending to google fit: onSuccess()");
                     }
                 })
                 .addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
-                        Log.e(LOG_TAG, "onFailure()", e);
+                        Log.e(LOG_TAG, "Sending to google fit: onFailure()", e);
                     }
                 })
                 .addOnCompleteListener(new OnCompleteListener<DataReadResponse>() {
                     @Override
                     public void onComplete(@NonNull Task task) {
-                        Log.d(LOG_TAG, "onComplete()");
+                        Log.d(LOG_TAG, "Sending to google fit: onComplete()");
                     }
                 });
-        Log.d(LOG_TAG,"End");
+        Log.d(LOG_TAG,"Sending to google fit: End");
     }
 
     public void updateData(DataReadResponse dataReadResult) {
-
         Log.i(LOG_TAG, "Number of returned buckets of DataSets is: " + dataReadResult.getBuckets().size());
         Bucket bucket = dataReadResult.getBuckets().get(0);
         DataSet dataSet = bucket.getDataSets().get(0);
@@ -190,68 +208,28 @@ public class DisplayData extends AppCompatActivity {
         Log.i(LOG_TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
         DateFormat dateFormat = getTimeInstance();
 
-        DataPoint dp = dataSet.getDataPoints().get(0);
-        Log.i(LOG_TAG, "Data point:");
-        Log.i(LOG_TAG, "\tType: " + dp.getDataType().getName());
-        Log.i(LOG_TAG, "\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
-        Log.i(LOG_TAG, "\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
-        Field field = dp.getDataType().getFields().get(0);
-        Log.i(LOG_TAG, "\tField: " + field.getName() + " Value: " + dp.getValue(field));
-
-        if(dp.getDataType().getName().equals("com.google.step_count.delta")){
-            userState.setStep(Integer.parseInt("" + dp.getValue(field)));
-            updateUI();
-        }else if(dp.getDataType().getName().equals("com.google.calories.expended")){
-            userState.setCalo(Float.parseFloat("" + dp.getValue(field)));
-            updateUI();
-        }
-
-        Log.i(LOG_TAG, "UpdateData finished.");
-
-    }
-
-    /*public static void printData(DataReadResponse dataReadResult) {
-        // [START parse_read_data_result]
-        // If the DataReadRequest object specified aggregated data, dataReadResult will be returned
-        // as buckets containing DataSets, instead of just DataSets.
-        if (dataReadResult.getBuckets().size() > 0) {
-            Log.i(
-                    LOG_TAG, "Number of returned buckets of DataSets is: " + dataReadResult.getBuckets().size());
-            for (Bucket bucket : dataReadResult.getBuckets()) {
-                List<DataSet> dataSets = bucket.getDataSets();
-                for (DataSet dataSet : dataSets) {
-                    dumpDataSet(dataSet);
-                }
-            }
-        } else if (dataReadResult.getDataSets().size() > 0) {
-            Log.i(LOG_TAG, "Number of returned DataSets is: " + dataReadResult.getDataSets().size());
-            for (DataSet dataSet : dataReadResult.getDataSets()) {
-                dumpDataSet(dataSet);
-            }
-        }
-    }
-    */
-
-    private static void dumpDataSet(DataSet dataSet) {
-        Log.i(LOG_TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
-        DateFormat dateFormat = getTimeInstance();
-
-        for (DataPoint dp : dataSet.getDataPoints()) {
+        if(!dataSet.getDataPoints().isEmpty()) {
+            DataPoint dp = dataSet.getDataPoints().get(0);
             Log.i(LOG_TAG, "Data point:");
             Log.i(LOG_TAG, "\tType: " + dp.getDataType().getName());
             Log.i(LOG_TAG, "\tStart: " + dateFormat.format(dp.getStartTime(TimeUnit.MILLISECONDS)));
             Log.i(LOG_TAG, "\tEnd: " + dateFormat.format(dp.getEndTime(TimeUnit.MILLISECONDS)));
-            for (Field field : dp.getDataType().getFields()) {
-                Log.i(LOG_TAG, "\tField: " + field.getName() + " Value: " + dp.getValue(field));
+            Field field = dp.getDataType().getFields().get(0);
+            Log.i(LOG_TAG, "\tField: " + field.getName() + " Value: " + dp.getValue(field));
+
+            if (dp.getDataType().getName().equals("com.google.step_count.delta")) {
+                userState.setStep(Integer.parseInt("" + dp.getValue(field)));
+            } else if (dp.getDataType().getName().equals("com.google.calories.expended")) {
+                userState.setCalo(Float.parseFloat("" + dp.getValue(field)));
             }
         }
+        updateUI();
+        Log.i(LOG_TAG, "UpdateData finished.");
+
     }
 
-
     public void SaveUserState(UserState userState,String filename){
-
         FileOutputStream outputStream;
-
         try{
             outputStream = openFileOutput(filename, Context.MODE_PRIVATE);
 
@@ -265,7 +243,6 @@ public class DisplayData extends AppCompatActivity {
     }
 
     public void SaveReward(int reward,String filename){
-
         FileOutputStream outputStream;
 
         try{
@@ -318,6 +295,11 @@ public class DisplayData extends AppCompatActivity {
         progressBar.setProgress(userState.getStep());
 
         SaveUserState(userState,"state.txt");
+        //Log.i(LOG_TAG, "Access server.");
+        //fetchingData();
+        Log.i(LOG_TAG, "Post to server : Start.");
+        PostData("test871956352@gmail.com", "2","2018-2-2","100");
+        Log.i(LOG_TAG, "Post to server : End.");
 
         Log.i(LOG_TAG, "UpdateUI finished.");
     }
@@ -335,5 +317,68 @@ public class DisplayData extends AppCompatActivity {
         }
         Log.i(LOG_TAG, "Save reward finished.");
         return reward;
+    }
+
+    void fetchingData(){
+        Log.i(LOG_TAG, "Access Web Server: Fetching data - Start");
+        final TextView Step_Data = (TextView)findViewById(R.id.textView_step_data);
+
+        String myURL = "http://18.221.211.134/fyp/returnUserData.php";
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(myURL, new Response.Listener<JSONArray>() {
+            @Override
+            public void onResponse(JSONArray response) {
+                Log.i(LOG_TAG, "Request responsed.");
+                final String[] user_name = new String[response.length()];
+                final String[] user_step = new String[response.length()];
+                final String[] user_cal = new String[response.length()];
+                final String[] user_val = new String[response.length()];
+                for (int i =0; i < response.length(); i++){
+                    try {
+                        JSONObject jsonObject = (JSONObject) response.get(i);
+                        user_name[i] = jsonObject.getString("userName");
+                        user_step[i] = jsonObject.getString("dataType");
+                        user_cal[i] = jsonObject.getString("time");
+                        user_val[i] = jsonObject.getString("value");
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
+                }
+                Step_Data.setText(user_name[0]);
+
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.i(LOG_TAG, "Volley error.");
+            }
+        });
+        com.example.kavin.fitness_game.AppController.getInstance().addToRequestQueue(jsonArrayRequest);
+    }
+
+    public void PostData(final String userName, final String dataType, final String time, final String value) {
+        String url = "http://18.221.211.134/fyp/processUserData.php";
+        StringRequest sq = new StringRequest(Request.Method.POST, url, new Response.Listener<String>() {
+            @Override
+            public void onResponse(String response) {
+                Log.i(LOG_TAG, "Post Data : onResponse.");
+            }
+        }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.i(LOG_TAG, error.toString());
+                VolleyLog.d("Volley Log", error);
+            }
+        }) {
+            protected Map<String, String > getParams(){
+                Map<String, String> parr = new HashMap<String, String>();
+                parr.put("userName", userName);
+                parr.put("dataTypeID", dataType);
+                parr.put("time", time);
+                parr.put("value", value);
+                return parr;
+            }
+
+        };
+        AppController.getInstance().addToRequestQueue(sq);
     }
 }
