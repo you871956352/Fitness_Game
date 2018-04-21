@@ -1,5 +1,7 @@
 package com.example.kavin.fitness_game;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -18,11 +20,13 @@ import android.widget.TextView;
 import com.android.volley.Request;
 import com.android.volley.toolbox.StringRequest;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.fitness.Fitness;
 import com.google.android.gms.fitness.FitnessOptions;
 import com.google.android.gms.fitness.data.Bucket;
 import com.google.android.gms.fitness.data.DataPoint;
 import com.google.android.gms.fitness.data.DataSet;
+import com.google.android.gms.fitness.data.DataSource;
 import com.google.android.gms.fitness.data.DataType;
 import com.google.android.gms.fitness.data.Field;
 import com.google.android.gms.fitness.request.DataReadRequest;
@@ -35,6 +39,7 @@ import com.google.android.gms.tasks.Task;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -63,6 +68,7 @@ public class DisplayData extends AppCompatActivity {
     private static UserState userState;
     private static final int REQUEST_OAUTH_REQUEST_CODE = 1;
     private static Plan_item plan;
+    private static String date;
 
     @Override
 
@@ -70,7 +76,10 @@ public class DisplayData extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_display_data);
 
-
+        Date c = Calendar.getInstance().getTime();
+        SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd");
+        date = df.format(c);
+        Log.i(LOG_TAG, "Current date: " + date);
 
         userState = new UserState();
         String[] plan_String = ReadUserData("plan.txt").split(",");
@@ -80,7 +89,6 @@ public class DisplayData extends AppCompatActivity {
             plan.setTitle(plan_String[0]);
             plan.setStep(Integer.parseInt(plan_String[1]));
         }
-
 
         String userStateData = ReadUserData("state.txt");
         if (!userStateData.equals("")){
@@ -93,17 +101,31 @@ public class DisplayData extends AppCompatActivity {
             updateUI();
         }
 
+        //Get user name
+        AccountManager manager = (AccountManager) getSystemService(ACCOUNT_SERVICE);
+        Account[] list = manager.getAccounts();
+        String gmail = null;
+
+        for(Account account: list)
+        {
+            if(account.type.equalsIgnoreCase("com.google"))
+            {
+                gmail = account.name;
+                break;
+            }
+        }
+        userState.setUserName(gmail);
+        Log.i(LOG_TAG, "User Name: " + gmail);
+        //
         FitnessOptions fitnessOptions = FitnessOptions.builder()
                 .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
                 .addDataType(DataType.AGGREGATE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
+                .addDataType(DataType.TYPE_DISTANCE_DELTA, FitnessOptions.ACCESS_READ)
+                .addDataType(DataType.AGGREGATE_DISTANCE_DELTA, FitnessOptions.ACCESS_READ)
                 .build();
 
         if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(this), fitnessOptions)) {
-            GoogleSignIn.requestPermissions(
-                    this, // your activity
-                    GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
-                    GoogleSignIn.getLastSignedInAccount(this),
-                    fitnessOptions);
+            GoogleSignIn.requestPermissions(this, GOOGLE_FIT_PERMISSIONS_REQUEST_CODE, GoogleSignIn.getLastSignedInAccount(this), fitnessOptions);
         } else {
             accessGoogleFit();
         }
@@ -160,7 +182,7 @@ public class DisplayData extends AppCompatActivity {
                         .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                         .build();
 
-        sendRequest(readRequest_step,R.id.textView_step_data);
+        sendRequest(readRequest_step);
 
         DataReadRequest readRequest_cal =
                 new DataReadRequest.Builder()
@@ -169,12 +191,20 @@ public class DisplayData extends AppCompatActivity {
                         .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
                         .build();
 
-        sendRequest(readRequest_cal,R.id.textView_cal_data);
+        sendRequest(readRequest_cal);
 
+        DataReadRequest readRequest_dis =
+                new DataReadRequest.Builder()
+                        .aggregate(DataType.TYPE_DISTANCE_DELTA, DataType.AGGREGATE_DISTANCE_DELTA)
+                        .bucketByTime(1, TimeUnit.DAYS)
+                        .setTimeRange(startTime, endTime, TimeUnit.MILLISECONDS)
+                        .build();
+
+        sendRequest(readRequest_dis);
     }
 
     //Request function.
-    public void sendRequest(DataReadRequest readRequest, final int tid){
+    public void sendRequest(DataReadRequest readRequest){
         Log.d(LOG_TAG,"Sending to google fit: Start");
         Fitness.getHistoryClient(this, GoogleSignIn.getLastSignedInAccount(this))
                 .readData(readRequest)
@@ -204,7 +234,8 @@ public class DisplayData extends AppCompatActivity {
         Log.i(LOG_TAG, "Number of returned buckets of DataSets is: " + dataReadResult.getBuckets().size());
         Bucket bucket = dataReadResult.getBuckets().get(0);
         DataSet dataSet = bucket.getDataSets().get(0);
-
+        String DataType = "";
+        String Value = "";
         Log.i(LOG_TAG, "Data returned for Data type: " + dataSet.getDataType().getName());
         DateFormat dateFormat = getTimeInstance();
 
@@ -218,14 +249,27 @@ public class DisplayData extends AppCompatActivity {
             Log.i(LOG_TAG, "\tField: " + field.getName() + " Value: " + dp.getValue(field));
 
             if (dp.getDataType().getName().equals("com.google.step_count.delta")) {
-                userState.setStep(Integer.parseInt("" + dp.getValue(field)));
+                DataType = "1";
+                Value = "" + dp.getValue(field);
+                userState.setStep(Integer.parseInt(Value));
             } else if (dp.getDataType().getName().equals("com.google.calories.expended")) {
-                userState.setCalo(Float.parseFloat("" + dp.getValue(field)));
+                DataType = "3";
+                Value = "" + dp.getValue(field);
+                userState.setCalo(Float.parseFloat(Value));
+            }else if(dp.getDataType().getName().equals("com.google.distance.delta")) {
+                DataType = "2";
+                Value = "" + dp.getValue(field);
+                userState.setDistance(Float.parseFloat(Value));
             }
         }
         updateUI();
+        //Update data to server.
+        Log.i(LOG_TAG, "Post to server : Start.");
+        if(!userState.getUserName().equals("") && !DataType.equals("")) {
+            PostData(userState.getUserName(), DataType, date, Value);
+        }
+        Log.i(LOG_TAG, "Post to server : End.");
         Log.i(LOG_TAG, "UpdateData finished.");
-
     }
 
     public void SaveUserState(UserState userState,String filename){
@@ -286,9 +330,12 @@ public class DisplayData extends AppCompatActivity {
         Step_Data.setText(value.subSequence(0,value.length()));
 
         TextView Cal_Data = (TextView)findViewById(R.id.textView_cal_data);
-
         value = "" + userState.getCalo();
         Cal_Data.setText(value.subSequence(0,value.length()));
+
+        TextView Dis_Data = (TextView)findViewById(R.id.textView_dis_data);
+        value = "" + userState.getDistance();
+        Dis_Data.setText(value.subSequence(0,value.length()));
 
         ProgressBar progressBar = (ProgressBar) findViewById(R.id.progressBar);
         progressBar.setMax(plan.getStep());
@@ -297,9 +344,6 @@ public class DisplayData extends AppCompatActivity {
         SaveUserState(userState,"state.txt");
         //Log.i(LOG_TAG, "Access server.");
         //fetchingData();
-        Log.i(LOG_TAG, "Post to server : Start.");
-        PostData("test871956352@gmail.com", "2","2018-2-2","100");
-        Log.i(LOG_TAG, "Post to server : End.");
 
         Log.i(LOG_TAG, "UpdateUI finished.");
     }

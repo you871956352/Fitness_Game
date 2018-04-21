@@ -16,6 +16,7 @@
     <string name="plan_2">Plan 2</string>
     <string name="data_cal">Total calories:</string>
     <string name="data_step">Total steps:</string>
+    <string name="data_dis">Total distance:</string>
     <string name="button_data">Get Rewards</string>
     <string name="target_step">Target</string>
     <string name="Progress">Plan Progress</string>

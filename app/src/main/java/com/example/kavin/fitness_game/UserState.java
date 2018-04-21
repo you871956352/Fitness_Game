@@ -7,6 +7,7 @@ package com.example.kavin.fitness_game;
 public class UserState {
     private String userName;
     private int step;
+    private float distance;
     private float calo;
 
     UserState(){
@@ -36,6 +37,10 @@ public class UserState {
     public void setCalo(float calo) {
         this.calo = calo;
     }
+
+    public float getDistance(){return distance; }
+
+    public void setDistance(float distance){this.distance = distance;}
 
     public String getUserName() {
         return userName;
