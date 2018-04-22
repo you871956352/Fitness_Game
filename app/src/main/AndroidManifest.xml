@@ -12,9 +12,9 @@
     <application
         android:name=".AppController"
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@mipmap/launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@mipmap/launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity">
@@ -28,6 +28,8 @@
         <activity android:name=".DisplayGame" />
         <activity android:name=".DisplayPlan" />
         <activity android:name=".DisplayData"/>
+        <activity android:name=".DisplayFriends"/>
+
     </application>
 
 </manifest>

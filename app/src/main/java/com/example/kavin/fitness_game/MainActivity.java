@@ -21,50 +21,30 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
-        /*FitnessOptions fitnessOptions = FitnessOptions.builder()
-                .addDataType(DataType.TYPE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
-                .addDataType(DataType.AGGREGATE_STEP_COUNT_DELTA, FitnessOptions.ACCESS_READ)
-                .build();
-
-        if (!GoogleSignIn.hasPermissions(GoogleSignIn.getLastSignedInAccount(this), fitnessOptions)) {
-            GoogleSignIn.requestPermissions(
-                    this, // your activity
-                    GOOGLE_FIT_PERMISSIONS_REQUEST_CODE,
-                    GoogleSignIn.getLastSignedInAccount(this),
-                    fitnessOptions);
-        } else {
-            accessGoogleFit();
-        }
-        */
     }
-
-
-    /** Called when the user taps the Send button */
     public void redirect_health(View view) {
         // Do something in response to button
         Intent intent = new Intent(this, DisplayHealth.class);
         startActivity(intent);
     }
-
-    /** Called when the user taps the Send button */
     public void redirect_game(View view) {
         // Do something in response to button
         Intent intent = new Intent(this, DisplayGame.class);
         startActivity(intent);
     }
-
-    /** Called when the user taps the Send button */
     public void redirect_plan(View view) {
         // Do something in response to button
         Intent intent = new Intent(this, DisplayPlan.class);
         startActivity(intent);
     }
-    /** Called when the user taps the Send button */
     public void redirect_data(View view) {
         // Do something in response to button
         Intent intent = new Intent(this, DisplayData.class);
         startActivity(intent);
     }
-
+    public void redirect_friends(View view) {
+        // Do something in response to button
+        Intent intent = new Intent(this, DisplayFriends.class);
+        startActivity(intent);
+    }
 }
